@@ -1,4 +1,4 @@
-import { BarChart3, Calendar, CheckSquare, Home, Settings, FileText, Upload, Users } from "lucide-react";
+import { BarChart3, Calendar, CheckSquare, Home, Settings, FileText, Upload, Users, Brain, AlertTriangle, TrendingUp, FileBarChart } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -10,7 +10,7 @@ import {
   SidebarMenuItem,
   SidebarHeader,
 } from "@/components/ui/sidebar";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import dropsTracLogo from "@assets/generated_images/Drops_Trac_logo_bc94c0a8.png";
 
 const items = [
@@ -51,6 +51,29 @@ const items = [
   },
 ];
 
+const aiItems = [
+  {
+    title: "Smart Severity & Recommendation",
+    url: "/ai/smart-severity",
+    icon: Brain,
+  },
+  {
+    title: "Anomaly Detection",
+    url: "/ai/anomaly-detection",
+    icon: AlertTriangle,
+  },
+  {
+    title: "Predictive Analytics",
+    url: "/ai/predictive-analytics",
+    icon: TrendingUp,
+  },
+  {
+    title: "AI Summaries",
+    url: "/ai/summaries",
+    icon: FileBarChart,
+  },
+];
+
 export function AppSidebar() {
   const [location] = useLocation();
 
@@ -76,10 +99,31 @@ export function AppSidebar() {
                     asChild
                     data-testid={`link-${item.title.toLowerCase().replace(' ', '-')}`}
                   >
-                    <a href={item.url} className={location === item.url ? 'bg-sidebar-accent' : ''}>
+                    <Link href={item.url} className={location === item.url ? 'bg-sidebar-accent' : ''}>
                       <item.icon />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        
+        <SidebarGroup>
+          <SidebarGroupLabel>AI Features</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {aiItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    data-testid={`link-${item.title.toLowerCase().replace(/ & | /g, '-')}`}
+                  >
+                    <Link href={item.url} className={location === item.url ? 'bg-sidebar-accent' : ''}>
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

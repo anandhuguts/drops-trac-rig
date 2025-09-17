@@ -4,7 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Header } from "@/components/Header";
 import DashboardPage from "@/pages/DashboardPage";
@@ -12,6 +12,10 @@ import InspectionsPage from "@/pages/InspectionsPage";
 import InspectionDetailPage from "@/pages/InspectionDetailPage";
 import NewInspectionPage from "@/pages/NewInspectionPage";
 import SettingsPage from "@/pages/SettingsPage";
+import SmartSeverityPage from "@/pages/SmartSeverityPage";
+import AnomalyDetectionPage from "@/pages/AnomalyDetectionPage";
+import PredictiveAnalyticsPage from "@/pages/PredictiveAnalyticsPage";
+import AISummariesPage from "@/pages/AISummariesPage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -22,6 +26,10 @@ function Router() {
       <Route path="/inspections/new" component={NewInspectionPage} />
       <Route path="/inspections/:id" component={InspectionDetailPage} />
       <Route path="/settings" component={SettingsPage} />
+      <Route path="/ai/smart-severity" component={SmartSeverityPage} />
+      <Route path="/ai/anomaly-detection" component={AnomalyDetectionPage} />
+      <Route path="/ai/predictive-analytics" component={PredictiveAnalyticsPage} />
+      <Route path="/ai/summaries" component={AISummariesPage} />
       <Route component={NotFound} />
     </Switch>
   );
