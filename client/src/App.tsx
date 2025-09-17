@@ -16,6 +16,7 @@ import SmartSeverityPage from "@/pages/SmartSeverityPage";
 import AnomalyDetectionPage from "@/pages/AnomalyDetectionPage";
 import PredictiveAnalyticsPage from "@/pages/PredictiveAnalyticsPage";
 import AISummariesPage from "@/pages/AISummariesPage";
+import ReportsPage from "@/pages/ReportsPage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/inspections/new" component={NewInspectionPage} />
       <Route path="/inspections/:id" component={InspectionDetailPage} />
       <Route path="/settings" component={SettingsPage} />
+      <Route path="/reports" component={ReportsPage} />
       <Route path="/ai/smart-severity" component={SmartSeverityPage} />
       <Route path="/ai/anomaly-detection" component={AnomalyDetectionPage} />
       <Route path="/ai/predictive-analytics" component={PredictiveAnalyticsPage} />
