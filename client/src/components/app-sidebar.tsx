@@ -11,7 +11,7 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar";
 import { useLocation, Link } from "wouter";
-import dropsTracLogo from "@assets/generated_images/Drops_Trac_logo_bc94c0a8.png";
+import dropsTracLogo from "@assets/generated_images/e28805cb-6174-4d0d-960b-b4bef57acca3.png";
 
 const items = [
   {
@@ -29,21 +29,13 @@ const items = [
     url: "/inspections/new",
     icon: Calendar,
   },
-  {
-    title: "Checklists",
-    url: "/checklists",
-    icon: FileText,
-  },
+
   {
     title: "Reports",
     url: "/reports",
     icon: BarChart3,
   },
-  {
-    title: "Cloud Sync",
-    url: "/sync",
-    icon: Upload,
-  },
+
   {
     title: "Settings",
     url: "/settings",
@@ -81,7 +73,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-6">
         <div className="flex items-center gap-3">
-          <img src={dropsTracLogo} alt="Drops Trac" className="h-8 w-8 object-contain" />
+          <img src={dropsTracLogo} alt="Drops Trac" className="h-20 w-20 object-contain" />
           <div>
             <h1 className="font-semibold text-lg">Drops Trac</h1>
             <p className="text-sm text-muted-foreground">Admin Dashboard</p>
