@@ -1,15 +1,53 @@
+// InspectionDetailPage.tsx
 import { ChecklistView } from "@/components/ChecklistView";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { CARPanel } from "@/components/CARPanel";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Save, Share, Download, Edit } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Save, Share, Download } from "lucide-react";
 
-export default function InspectionDetailPage() {
+// Type for a single inspection
+interface Inspection {
+  _id: string;
+  title: string;
+  description: string;
+  priority: "Low" | "Medium" | "High" | "Urgent";
+  scheduleDate: string;
+  estimatedDuration: number;
+  rig: string;
+  inspectors: string[];
+  status?: "pending" | "in-progress" | "completed" | "fail";
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Props type
+interface InspectionDetailPageProps {
+  inspections?: Inspection | null;
+}
+
+// Component as a normal function
+export default function InspectionDetailPage({ inspections = null }: InspectionDetailPageProps) {
+  if (!inspections) return <p>No inspection data available.</p>;
+
+  const {
+    title,
+    description,
+    priority,
+    scheduleDate,
+    estimatedDuration,
+    rig,
+    inspectors,
+    status,
+    createdAt,
+    
+  } = inspections;
+
+  const formatDate = (dateStr?: string) => dateStr ? new Date(dateStr).toLocaleDateString() : "N/A";
+
   return (
     <div className="space-y-6">
       <Card>
@@ -17,91 +55,72 @@ export default function InspectionDetailPage() {
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl font-bold">INS-001</h1>
-                <StatusBadge status="in-progress" />
-                <StatusBadge severity="medium" variant="severity" />
+                <h1 className="text-2xl font-bold">{title}</h1>
+                <StatusBadge status={status} />
+                <StatusBadge severity={priority.toLowerCase() as "low" | "medium" | "high"} variant="severity" />
+
               </div>
-              <h2 className="text-xl text-muted-foreground mb-4">Deep Water Horizon II - Weekly Safety Inspection</h2>
-              
+              <p className="text-muted-foreground mb-4">{description}</p>
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
                   <p className="font-medium">Created</p>
-                  <p className="text-muted-foreground">Jan 15, 2024</p>
+                  <p className="text-muted-foreground">{formatDate(createdAt)}</p>
                 </div>
                 <div>
                   <p className="font-medium">Due Date</p>
-                  <p className="text-muted-foreground">Jan 22, 2024</p>
+                  <p className="text-muted-foreground">{formatDate(scheduleDate)}</p>
                 </div>
                 <div>
-                  <p className="font-medium">Completion</p>
-                  <p className="text-muted-foreground">65%</p>
+                  <p className="font-medium">Duration</p>
+                  <p className="text-muted-foreground">{estimatedDuration} hrs</p>
                 </div>
                 <div>
-                  <p className="font-medium">Issues Found</p>
-                  <p className="text-muted-foreground">3 items</p>
+                  <p className="font-medium">Rig</p>
+                  <p className="text-muted-foreground">{rig}</p>
                 </div>
               </div>
             </div>
-            
+
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" data-testid="button-share">
+              <Button variant="outline" size="sm">
                 <Share className="h-4 w-4 mr-2" />
                 Share
               </Button>
-              <Button variant="outline" size="sm" data-testid="button-download">
+              <Button variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
-              <Button size="sm" data-testid="button-save">
+              <Button size="sm">
                 <Save className="h-4 w-4 mr-2" />
                 Save
               </Button>
             </div>
           </div>
         </CardHeader>
+
         <CardContent>
           <div className="space-y-4">
-            <div>
-              <h3 className="font-medium mb-2">Assigned Inspectors</h3>
-              <div className="flex gap-2">
-                <div className="flex items-center gap-2 bg-muted p-2 rounded-lg">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback>JS</AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm">John Smith</span>
-                  <Badge variant="secondary">Lead</Badge>
-                </div>
-                <div className="flex items-center gap-2 bg-muted p-2 rounded-lg">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback>SJ</AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm">Sarah Jones</span>
-                </div>
-              </div>
+            <h3 className="font-medium mb-2">Assigned Inspectors</h3>
+            <div className="flex gap-2 flex-wrap">
+              {inspectors.length > 0 ? (
+                inspectors.map((inspector) => (
+                  <div key={inspector} className="flex items-center gap-2 bg-muted p-2 rounded-lg">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback>
+                        {inspector.split(" ").map((n) => n[0]).join("")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm">{inspector}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-muted-foreground">No inspectors assigned.</p>
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
-
-      <Tabs defaultValue="checklist" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="checklist" data-testid="tab-checklist">Checklist</TabsTrigger>
-          <TabsTrigger value="photos" data-testid="tab-photos">Photos</TabsTrigger>
-          <TabsTrigger value="cars" data-testid="tab-cars">CARs</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="checklist" className="space-y-4">
-          <ChecklistView />
-        </TabsContent>
-        
-        <TabsContent value="photos" className="space-y-4">
-          <PhotoGallery />
-        </TabsContent>
-        
-        <TabsContent value="cars" className="space-y-4">
-          <CARPanel />
-        </TabsContent>
-      </Tabs>
     </div>
   );
 }

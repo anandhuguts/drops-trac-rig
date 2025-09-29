@@ -1,4 +1,4 @@
-import { BarChart3, Calendar, CheckSquare, Home, Settings, FileText, Upload, Users, Brain, AlertTriangle, TrendingUp, FileBarChart } from "lucide-react";
+import { BarChart3, Calendar, CheckSquare, Home, Settings, FileText, Upload, Users, Brain, AlertTriangle, TrendingUp, FileBarChart, Axe} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -34,6 +34,16 @@ const items = [
     title: "Reports",
     url: "/reports",
     icon: BarChart3,
+  },
+  {
+    title: "Add Inspectors",
+    url: "/add-inspectors",
+    icon: Users,
+  },
+  {
+    title: "Add Rigs",
+    url: "/add-rigs",
+    icon: Axe,
   },
 
   {

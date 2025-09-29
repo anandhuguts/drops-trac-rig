@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { InspectionTable } from "@/components/InspectionTable";
 import { Search, Filter, Plus } from "lucide-react";
+import { Link } from "wouter";
 
 export default function InspectionsPage() {
   return (
@@ -14,8 +15,10 @@ export default function InspectionsPage() {
           <p className="text-muted-foreground">Manage and review all inspection activities</p>
         </div>
         <Button data-testid="button-new-inspection">
-          <Plus className="h-4 w-4 mr-2" />
-          New Inspection
+          <Link to="/inspections/new" className={"flex items-center"}>
+    <Plus className="h-4 w-4 mr-2" />
+    New Inspection
+  </Link>
         </Button>
       </div>
 

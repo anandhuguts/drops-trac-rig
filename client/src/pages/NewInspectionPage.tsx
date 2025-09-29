@@ -1,4 +1,5 @@
-import { useState } from "react";
+import axios from "axios";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,9 @@ const availableRigs = [
 ];
 
 export default function NewInspectionPage() {
+  const [availableRigs, setAvailableRigs] = useState<{ id: string; name: string; location: string }[]>([]);
+const [availableInspectors, setAvailableInspectors] = useState<{ id: string; name: string; specialties: string[] }[]>([]);
+
   const [selectedInspectors, setSelectedInspectors] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     title: "",
@@ -31,6 +35,41 @@ export default function NewInspectionPage() {
     priority: "medium",
     estimatedDuration: "",
   });
+
+    const fetchRigs = async () => {
+    try {
+      const res = await axios.get("https://drop-stack-backend.onrender.com/api/rigs");
+      // Assuming backend returns array of rigs with _id, name, location
+      const rigsData = res.data.map((rig: any) => ({
+        id: rig._id,
+        name: rig.name,
+        location: rig.location,
+      }));
+      setAvailableRigs(rigsData);
+    } catch (err: any) {
+      console.error("Error fetching rigs:", err.response?.data || err.message);
+    }
+  };
+
+  // Fetch inspectors from backend
+  const fetchInspectors = async () => {
+    try {
+      const res = await axios.get("https://drop-stack-backend.onrender.com/api/inspectors"); // Make sure you have this route
+      const inspectorsData = res.data.map((inspector: any) => ({
+        id: inspector._id,
+        name: inspector.name,
+        specialties: inspector.specialties || [],
+      }));
+      setAvailableInspectors(inspectorsData);
+    } catch (err: any) {
+      console.error("Error fetching inspectors:", err.response?.data || err.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchRigs();
+    fetchInspectors();
+  }, []);
 
   const addInspector = (inspectorId: string) => {
     if (!selectedInspectors.includes(inspectorId)) {
@@ -42,12 +81,44 @@ export default function NewInspectionPage() {
     setSelectedInspectors(selectedInspectors.filter(id => id !== inspectorId));
   };
 
-  const handleSubmit = () => {
-    console.log("Creating inspection:", {
-      ...formData,
-      inspectors: selectedInspectors,
+const handleSubmit = async () => {
+  try {
+    // Prepare payload
+    const payload = {
+      title: formData.title,
+      priority: formData.priority.charAt(0).toUpperCase() + formData.priority.slice(1), // 'medium' -> 'Medium'
+      description: formData.description,
+      scheduleDate: formData.scheduledDate,
+      estimatedDuration: Number(formData.estimatedDuration),
+      rig: selectedRig?.name || "",
+      inspectors: selectedInspectors.map(id => {
+        const inspector = availableInspectors.find(i => i.id === id);
+        return inspector ? inspector.name : "";
+      })
+    };
+
+    // Send POST request
+    const response = await axios.post("https://drop-stack-backend.onrender.com/inspections", payload);
+
+    console.log("Inspection created successfully:", response.data);
+    alert("Inspection created successfully!");
+
+    // Reset form
+    setFormData({
+      title: "",
+      rigId: "",
+      scheduledDate: "",
+      description: "",
+      priority: "medium",
+      estimatedDuration: "",
     });
-  };
+    setSelectedInspectors([]);
+
+  } catch (err: any) {
+    console.error("Error creating inspection:", err.response?.data || err.message);
+    alert("Failed to create inspection: " + (err.response?.data?.error || err.message));
+  }
+};
 
   const selectedRig = availableRigs.find(rig => rig.id === formData.rigId);
 

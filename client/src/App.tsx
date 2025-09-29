@@ -9,7 +9,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { Header } from "@/components/Header";
 import DashboardPage from "@/pages/DashboardPage";
 import InspectionsPage from "@/pages/InspectionsPage";
-import InspectionDetailPage from "@/pages/InspectionDetailPage";
+
 import NewInspectionPage from "@/pages/NewInspectionPage";
 import SettingsPage from "@/pages/SettingsPage";
 import SmartSeverityPage from "@/pages/SmartSeverityPage";
@@ -18,6 +18,9 @@ import PredictiveAnalyticsPage from "@/pages/PredictiveAnalyticsPage";
 import AISummariesPage from "@/pages/AISummariesPage";
 import ReportsPage from "@/pages/ReportsPage";
 import NotFound from "@/pages/not-found";
+import AddInspector from "./pages/AddInspector";
+import AddRigs from "./pages/AddRigs";
+import InspectionDetailPage from "./pages/InspectionDetailPage";
 
 function Router() {
   return (
@@ -28,6 +31,8 @@ function Router() {
       <Route path="/inspections/:id" component={InspectionDetailPage} />
       <Route path="/settings" component={SettingsPage} />
       <Route path="/reports" component={ReportsPage} />
+      <Route path="/add-inspectors" component={AddInspector} />
+      <Route path="/add-rigs" component={AddRigs} />
       <Route path="/ai/smart-severity" component={SmartSeverityPage} />
       <Route path="/ai/anomaly-detection" component={AnomalyDetectionPage} />
       <Route path="/ai/predictive-analytics" component={PredictiveAnalyticsPage} />

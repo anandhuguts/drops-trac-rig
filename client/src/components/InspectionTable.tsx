@@ -1,56 +1,104 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "./StatusBadge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Eye, Edit, Download } from "lucide-react";
-import { format } from "date-fns";
+import { useEffect, useState } from "react";
+import InspectionDetailPage from "@/pages/InspectionDetailPage";
+import EditInspectionForm from "./EditInpsectionForm";
 
-//todo: remove mock functionality
-const mockInspections = [
-  {
-    id: "INS-001",
-    rigName: "Deep Water Horizon II",
-    inspectors: [{ name: "John Smith", avatar: null }, { name: "Sarah Jones", avatar: null }],
-    date: new Date("2024-01-15"),
-    status: "completed" as const,
-    severity: "medium" as const,
-    completionRate: 95,
-    issues: 3,
-  },
-  {
-    id: "INS-002", 
-    rigName: "Ocean Explorer",
-    inspectors: [{ name: "Mike Wilson", avatar: null }],
-    date: new Date("2024-01-14"),
-    status: "in-progress" as const,
-    severity: "low" as const,
-    completionRate: 65,
-    issues: 1,
-  },
-  {
-    id: "INS-003",
-    rigName: "North Sea Pioneer",
-    inspectors: [{ name: "Lisa Chen", avatar: null }, { name: "David Brown", avatar: null }],
-    date: new Date("2024-01-13"),
-    status: "fail" as const,
-    severity: "high" as const,
-    completionRate: 100,
-    issues: 8,
-  },
-];
 
 export function InspectionTable() {
-  const handleView = (id: string) => {
-    console.log("View inspection:", id);
+  const [inspections, setInspections] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [selectedInspection, setSelectedInspection] = useState<any | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  useEffect(() => {
+    const fetchInspections = async () => {
+      try {
+        const response = await axios.get("https://drop-stack-backend.onrender.com/inspections");
+        setInspections(response.data);
+      } catch (err) {
+        console.error("Failed to fetch inspections:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInspections();
+  }, []);
+
+  // ---------- Handlers ----------
+  const handleView = (inspection: any) => {
+    setSelectedInspection(inspection);
+    console.log(inspection);
+    setIsEditMode(false);
+    setIsModalOpen(true);
   };
 
-  const handleEdit = (id: string) => {
-    console.log("Edit inspection:", id);
+  const handleEdit = (inspection: any) => {
+    setSelectedInspection(inspection);
+    setIsEditMode(true);
+    setIsModalOpen(true);
   };
 
-  const handleDownload = (id: string) => {
-    console.log("Download inspection report:", id);
+  const handleSaveEdit = async (updatedInspection: any) => {
+    try {
+      await axios.put(
+        `https://drop-stack-backend.onrender.com/${updatedInspection._id}`,
+        updatedInspection
+      );
+
+      // Update list locally
+      setInspections((prev) =>
+        prev.map((i) =>
+          i._id === updatedInspection._id ? updatedInspection : i
+        )
+      );
+
+      setIsModalOpen(false);
+      setIsEditMode(false);
+    } catch (err) {
+      console.error("Failed to update inspection:", err);
+    }
   };
+
+ const handleDownload = async (id: string) => {
+  try {
+    const response = await axios.get(
+      `https://drop-stack-backend.onrender.com/inspections/${id}/pdf`,
+      { responseType: "blob" } // important for binary data
+    );
+
+    // Create a URL for the PDF blob
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+
+    // Create a temporary link and click it to trigger download
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `inspection_${id}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+
+    // Clean up
+    link.parentNode?.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error("Failed to download PDF:", err);
+  }
+};
+
 
   return (
     <div className="rounded-md border">
@@ -69,71 +117,109 @@ export function InspectionTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {mockInspections.map((inspection) => (
-            <TableRow 
-              key={inspection.id} 
-              className="hover-elevate"
-              data-testid={`row-inspection-${inspection.id}`}
-            >
-              <TableCell className="font-medium">{inspection.id}</TableCell>
-              <TableCell>{inspection.rigName}</TableCell>
-              <TableCell>
-                <div className="flex -space-x-2">
-                  {inspection.inspectors.map((inspector, idx) => (
-                    <Avatar key={idx} className="h-8 w-8 border-2 border-background">
-                      <AvatarImage src={inspector.avatar || undefined} />
-                      <AvatarFallback className="text-xs">
-                        {inspector.name.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                  ))}
-                </div>
-              </TableCell>
-              <TableCell>{format(inspection.date, "MMM dd, yyyy")}</TableCell>
-              <TableCell>
-                <StatusBadge status={inspection.status} />
-              </TableCell>
-              <TableCell>
-                <StatusBadge severity={inspection.severity} variant="severity" />
-              </TableCell>
-              <TableCell>{inspection.completionRate}%</TableCell>
-              <TableCell>
-                <span className={inspection.issues > 5 ? "text-destructive font-medium" : ""}>
-                  {inspection.issues}
-                </span>
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button 
-                    size="icon" 
-                    variant="ghost"
-                    onClick={() => handleView(inspection.id)}
-                    data-testid={`button-view-${inspection.id}`}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    size="icon" 
-                    variant="ghost"
-                    onClick={() => handleEdit(inspection.id)}
-                    data-testid={`button-edit-${inspection.id}`}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    size="icon" 
-                    variant="ghost"
-                    onClick={() => handleDownload(inspection.id)}
-                    data-testid={`button-download-${inspection.id}`}
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                </div>
+          {loading ? (
+            <TableRow>
+              <TableCell colSpan={9} className="text-center py-4">
+                Loading...
               </TableCell>
             </TableRow>
-          ))}
+          ) : inspections.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={9} className="text-center py-4">
+                No inspections found.
+              </TableCell>
+            </TableRow>
+          ) : (
+            inspections.map((inspection: any) => (
+              <TableRow key={inspection._id} className="hover-elevate">
+                <TableCell className="font-medium">{inspection._id}</TableCell>
+                <TableCell>{inspection.rig}</TableCell>
+                <TableCell>
+                  <div className="flex -space-x-2">
+                    {inspection.inspectors.map((name: string, idx: number) => (
+                      <Avatar
+                        key={idx}
+                        className="h-8 w-8 border-2 border-background"
+                      >
+                        <AvatarFallback className="text-xs">
+                          {name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {new Date(inspection.scheduleDate).toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  <StatusBadge status={inspection.status || "pending"} />
+                </TableCell>
+                <TableCell>
+                  <StatusBadge
+                    severity={inspection.priority || "low"}
+                    variant="severity"
+                  />
+                </TableCell>
+                <TableCell>-</TableCell>
+                <TableCell>-</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleView(inspection)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleEdit(inspection)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleDownload(inspection._id)}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
+
+      {/* Modal for view / edit */}
+      {isModalOpen && selectedInspection && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg w-4/5 max-w-6xl p-6 relative overflow-auto">
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              onClick={() => setIsModalOpen(false)}
+            >
+              ✕
+            </button>
+
+            {isEditMode ? (
+              <EditInspectionForm
+                inspection={selectedInspection}
+                onSave={handleSaveEdit}
+                onCancel={() => setIsModalOpen(false)}
+              />
+            ) : (
+              <InspectionDetailPage inspections={selectedInspection} />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
