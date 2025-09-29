@@ -56,7 +56,7 @@ export function InspectionTable() {
   const handleSaveEdit = async (updatedInspection: any) => {
     try {
       await axios.put(
-        `https://drop-stack-backend.onrender.com/${updatedInspection._id}`,
+        `https://drop-stack-backend.onrender.com/inspections/${updatedInspection._id}`,
         updatedInspection
       );
 
