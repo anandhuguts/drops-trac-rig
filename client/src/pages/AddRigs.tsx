@@ -33,10 +33,10 @@ export default function AddRigs() {
 
     try {
       if (editingRigId) {
-        await axios.put(`https://drop-stack-backend.onrender.com/rigs/${editingRigId}`, formData);
+        await axios.put(`https://drop-stack-backend.onrender.com/api/rigs/${editingRigId}`, formData);
         alert("Rig updated successfully!");
       } else {
-        await axios.post("https://drop-stack-backend.onrender.com/rigs", formData);
+        await axios.post("https://drop-stack-backend.onrender.com/api/rigs", formData);
         alert("Rig added successfully!");
       }
 

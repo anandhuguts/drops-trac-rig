@@ -21,7 +21,7 @@ export default function AddInspector() {
   // Fetch all inspectors from backend
   const fetchInspectors = async () => {
     try {
-      const res = await axios.get("https://drop-stack-backend.onrender.com/inspectors");
+      const res = await axios.get("https://drop-stack-backend.onrender.com/api/inspectors");
       setInspectors(res.data);
     } catch (err: any) {
       console.error("Error fetching inspectors:", err.response?.data || err.message);
@@ -83,7 +83,7 @@ export default function AddInspector() {
     if (!confirm("Are you sure you want to delete this inspector?")) return;
 
     try {
-      await axios.delete(`http://3000/api/inspectors/${id}`);
+      await axios.delete(`https://drop-stack-backend.onrender.com/api/inspectors/${id}`);
       alert("Inspector deleted successfully!");
       fetchInspectors();
     } catch (err: any) {

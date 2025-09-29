@@ -77,7 +77,7 @@ export function InspectionTable() {
  const handleDownload = async (id: string) => {
   try {
     const response = await axios.get(
-      `https://drop-stack-backend.onrender.com/inspections/${id}/pdf`,
+      `https://drop-stack-backend.onrender.com/api/inspections/${id}/pdf`,
       { responseType: "blob" } // important for binary data
     );
 
