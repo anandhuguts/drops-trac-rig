@@ -1,30 +1,25 @@
-import axios from "axios";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X, Edit } from "lucide-react";
+import { useRigs, useAddRig, useUpdateRig, useDeleteRig } from "./../hooks/use-rigs.ts";
+
+interface Rig {
+  _id: string;
+  name: string;
+  location: string;
+}
 
 export default function AddRigs() {
+  const { data: rigs = [], isLoading, error } = useRigs();
+  const addRig = useAddRig();
+  const updateRig = useUpdateRig();
+  const deleteRig = useDeleteRig();
+
   const [formData, setFormData] = useState({ name: "", location: "" });
-  const [rigs, setRigs] = useState<any[]>([]);
   const [editingRigId, setEditingRigId] = useState<string | null>(null);
 
-  // Fetch all rigs
-  const fetchRigs = async () => {
-    try {
-      const res = await axios.get("https://drop-stack-backend.onrender.com/api/rigs");
-      setRigs(res.data);
-    } catch (err: any) {
-      console.error("Error fetching rigs:", err.response?.data || err.message);
-    }
-  };
-
-  useEffect(() => {
-    fetchRigs();
-  }, []);
-
-  // Add or Update rig
   const handleSubmit = async () => {
     if (!formData.name || !formData.location) {
       alert("Please enter both name and location.");
@@ -33,40 +28,47 @@ export default function AddRigs() {
 
     try {
       if (editingRigId) {
-        await axios.put(`https://drop-stack-backend.onrender.com/api/rigs/${editingRigId}`, formData);
-        alert("Rig updated successfully!");
+        await updateRig.mutateAsync({ id: editingRigId, data: formData });
+        setEditingRigId(null);
       } else {
-        await axios.post("https://drop-stack-backend.onrender.com/api/rigs", formData);
-        alert("Rig added successfully!");
+        await addRig.mutateAsync(formData);
       }
-
       setFormData({ name: "", location: "" });
-      setEditingRigId(null);
-      fetchRigs();
-    } catch (err: any) {
-      console.error("Error adding/updating rig:", err.response?.data || err.message);
-      alert("Failed to add/update rig: " + (err.response?.data?.error || err.message));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save rig");
     }
   };
 
-  // Edit rig
-  const handleEdit = (rig: any) => {
+  const handleEdit = (rig: Rig) => {
     setFormData({ name: rig.name, location: rig.location });
     setEditingRigId(rig._id);
   };
 
-  // Delete rig
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this rig?")) return;
     try {
-      await axios.delete(`https://drop-stack-backend.onrender.com/api/rigs/${id}`);
-      alert("Rig deleted successfully!");
-      fetchRigs();
-    } catch (err: any) {
-      console.error("Error deleting rig:", err.response?.data || err.message);
-      alert("Failed to delete rig: " + (err.response?.data?.error || err.message));
+      await deleteRig.mutateAsync(id);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete rig");
     }
   };
+
+if (isLoading)
+  return (
+    <div className="flex items-center justify-center h-[50vh]">
+      <div className="w-12 h-12 border-4 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+    </div>
+  );
+
+if (error)
+  return (
+    <div className="flex items-center justify-center h-[50vh] text-red-500">
+      Error loading rigs
+    </div>
+  );
+
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -106,7 +108,7 @@ export default function AddRigs() {
 
       {/* Rigs List */}
       <div className="space-y-2">
-        {rigs.map((rig) => (
+        {(rigs as Rig[]).map((rig) => (
           <Card key={rig._id} className="p-3 flex justify-between items-center">
             <div>
               <p className="font-medium">{rig.name}</p>

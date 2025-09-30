@@ -6,43 +6,26 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "./StatusBadge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Eye, Edit, Download } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import InspectionDetailPage from "@/pages/InspectionDetailPage";
 import EditInspectionForm from "./EditInpsectionForm";
+import { useInspections, useUpdateInspection } from "@/hooks/use-inspections";
 
-
-export function InspectionTable() {
-  const [inspections, setInspections] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export function InspectionTable({ inspections, isLoading }: { inspections: any[]; isLoading: boolean }) {
+ 
+  const updateInspection = useUpdateInspection();
 
   const [selectedInspection, setSelectedInspection] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
 
-  useEffect(() => {
-    const fetchInspections = async () => {
-      try {
-        const response = await axios.get("https://drop-stack-backend.onrender.com/inspections");
-        setInspections(response.data);
-      } catch (err) {
-        console.error("Failed to fetch inspections:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInspections();
-  }, []);
-
   // ---------- Handlers ----------
   const handleView = (inspection: any) => {
     setSelectedInspection(inspection);
-    console.log(inspection);
     setIsEditMode(false);
     setIsModalOpen(true);
   };
@@ -53,55 +36,43 @@ export function InspectionTable() {
     setIsModalOpen(true);
   };
 
-  const handleSaveEdit = async (updatedInspection: any) => {
+  const handleSaveEdit = (updatedInspection: any) => {
+    updateInspection.mutate({ id: updatedInspection._id, data: updatedInspection });
+    setIsModalOpen(false);
+    setIsEditMode(false);
+  };
+
+  const handleDownload = async (id: string) => {
     try {
-      await axios.put(
-        `https://drop-stack-backend.onrender.com/inspections/${updatedInspection._id}`,
-        updatedInspection
+      const response = await fetch(
+        `https://drop-stack-backend.onrender.com/api/inspections/${id}/pdf`
       );
-
-      // Update list locally
-      setInspections((prev) =>
-        prev.map((i) =>
-          i._id === updatedInspection._id ? updatedInspection : i
-        )
-      );
-
-      setIsModalOpen(false);
-      setIsEditMode(false);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `inspection_${id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("Failed to update inspection:", err);
+      console.error("Failed to download PDF:", err);
     }
   };
 
- const handleDownload = async (id: string) => {
-  try {
-    const response = await axios.get(
-      `https://drop-stack-backend.onrender.com/api/inspections/${id}/pdf`,
-      { responseType: "blob" } // important for binary data
-    );
-
-    // Create a URL for the PDF blob
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-
-    // Create a temporary link and click it to trigger download
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `inspection_${id}.pdf`);
-    document.body.appendChild(link);
-    link.click();
-
-    // Clean up
-    link.parentNode?.removeChild(link);
-    window.URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error("Failed to download PDF:", err);
-  }
-};
-
+  const sortedInspections = [...inspections].sort(
+    (a, b) => new Date(a.scheduleDate).getTime() - new Date(b.scheduleDate).getTime()
+  );
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border relative">
+      {isLoading && (
+         <div className="flex items-center justify-center h-[50vh]">
+      <div className="w-12 h-12 border-4 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+    </div>
+      )}
+
       <Table>
         <TableHeader>
           <TableRow>
@@ -116,23 +87,22 @@ export function InspectionTable() {
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
+
         <TableBody>
-          {loading ? (
-            <TableRow>
-              <TableCell colSpan={9} className="text-center py-4">
-                Loading...
-              </TableCell>
-            </TableRow>
-          ) : inspections.length === 0 ? (
+          {!isLoading && sortedInspections.length === 0 && (
             <TableRow>
               <TableCell colSpan={9} className="text-center py-4">
                 No inspections found.
               </TableCell>
             </TableRow>
-          ) : (
-            inspections.map((inspection: any) => (
+          )}
+
+          {!isLoading &&
+            sortedInspections.map((inspection, index) => (
               <TableRow key={inspection._id} className="hover-elevate">
-                <TableCell className="font-medium">{inspection._id}</TableCell>
+                <TableCell className="font-medium">
+                  {`INS-${(index + 1).toString().padStart(3, "0")}`}
+                </TableCell>
                 <TableCell>{inspection.rig}</TableCell>
                 <TableCell>
                   <div className="flex -space-x-2">
@@ -167,33 +137,19 @@ export function InspectionTable() {
                 <TableCell>-</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleView(inspection)}
-                    >
+                    <Button size="icon" variant="ghost" onClick={() => handleView(inspection)}>
                       <Eye className="h-4 w-4" />
                     </Button>
-
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleEdit(inspection)}
-                    >
+                    <Button size="icon" variant="ghost" onClick={() => handleEdit(inspection)}>
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleDownload(inspection._id)}
-                    >
+                    <Button size="icon" variant="ghost" onClick={() => handleDownload(inspection._id)}>
                       <Download className="h-4 w-4" />
                     </Button>
                   </div>
                 </TableCell>
               </TableRow>
-            ))
-          )}
+            ))}
         </TableBody>
       </Table>
 

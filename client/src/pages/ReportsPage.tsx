@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,10 @@ import {
   AreaChart,
   Area
 } from "recharts";
+import { useInspectors } from "@/hooks/useInspector";
+import { useRigs } from "@/hooks/use-rigs";
+import { useInspections } from "@/hooks/use-inspections";
+import { useFilteredInspections } from "@/hooks/useFilteredInspections";
 
 const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6'];
 
@@ -115,9 +119,50 @@ export default function ReportsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState("last-30-days");
   const [selectedRig, setSelectedRig] = useState("all");
   const [selectedInspector, setSelectedInspector] = useState("all");
+   const { data: rigs = [], isLoading, error } = useRigs();
+   const { data: inspectors = [] } = useInspectors();
+   const { data: inspections = [] } = useInspections();
 
-  return (
-    <div className="space-y-6">
+  
+
+
+
+
+  const filteredInspections = useFilteredInspections(
+    inspections,
+    selectedRig,
+    selectedInspector
+  );
+
+
+const getSeverityBreakdown = () => {
+  const highCount = filteredInspections.filter(i => i.priority === "High").length;
+  const mediumCount = filteredInspections.filter(i => i.priority === "Medium").length;
+  const lowCount = filteredInspections.filter(i => i.priority === "Low").length;
+  const urgentCount = filteredInspections.filter(i => i.priority === "Urgent").length;
+  
+  return [
+    { severity: "High Priority", count: highCount, color: "#ff0000" },
+    { severity: "Medium Priority", count: mediumCount, color: "#ef4444" },
+    { severity: "Urgent Priority", count: urgentCount, color: "#f97316" },
+    { severity: "Low Priority", count: lowCount, color: "#22c55e" }
+  ].filter(item => item.count > 0); // Only show categories with data
+};
+
+const severityBreakdown = getSeverityBreakdown();
+
+const total = filteredInspections.length; // 10 filteredInspections
+const completed = filteredInspections.filter(i => i.status === "completed").length; // 0
+const fail = filteredInspections.filter(i => i.status === "fail").length; // 0
+var critical = filteredInspections.filter(i => i.priority === "Low").length; // 0
+
+
+const complianceRate = total === 0 ? 0 : (completed / total) * 100;
+const failRate = total === 0 ? 0 : (fail / total) * 100;
+console.log(filteredInspections); // 0
+  
+return (
+    <div className="space-y-6">                
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold" data-testid="heading-reports">Reports & Analytics</h1>
@@ -165,14 +210,14 @@ export default function ReportsPage() {
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Rigs</SelectItem>
-                  <SelectItem value="rig-001">Rig-001</SelectItem>
-                  <SelectItem value="rig-002">Rig-002</SelectItem>
-                  <SelectItem value="rig-003">Rig-003</SelectItem>
-                  <SelectItem value="rig-004">Rig-004</SelectItem>
-                  <SelectItem value="rig-005">Rig-005</SelectItem>
-                </SelectContent>
+           <SelectContent>
+                <SelectItem value="all">All Rigs</SelectItem>
+                {rigs.map((rig: any) => (
+                  <SelectItem key={rig._id} value={rig.name}>
+                    {rig.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
@@ -182,13 +227,13 @@ export default function ReportsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Inspectors</SelectItem>
-                  <SelectItem value="john-smith">John Smith</SelectItem>
-                  <SelectItem value="sarah-jones">Sarah Jones</SelectItem>
-                  <SelectItem value="mike-wilson">Mike Wilson</SelectItem>
-                  <SelectItem value="lisa-chen">Lisa Chen</SelectItem>
-                  <SelectItem value="david-brown">David Brown</SelectItem>
-                </SelectContent>
+                <SelectItem value="all">All Inspectors</SelectItem>
+                {inspectors.map((rig: any) => (
+                  <SelectItem key={rig._id} value={rig.name}>
+                    {rig.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
@@ -210,7 +255,7 @@ export default function ReportsPage() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold" data-testid="metric-total-inspections">294</div>
+            <div className="text-2xl font-bold" data-testid="metric-total-inspections">{filteredInspections.length}</div>
             <p className="text-xs text-muted-foreground">
               <span className="text-green-600">+12%</span> from last month
             </p>
@@ -222,7 +267,7 @@ export default function ReportsPage() {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600" data-testid="metric-compliance-rate">92.4%</div>
+            <div className="text-2xl font-bold text-green-600" data-testid="metric-compliance-rate">{complianceRate.toFixed(2)}%</div>
             <p className="text-xs text-muted-foreground">
               <span className="text-green-600">+2.1%</span> from last month
             </p>
@@ -234,7 +279,7 @@ export default function ReportsPage() {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600" data-testid="metric-critical-issues">15</div>
+            <div className="text-2xl font-bold text-red-600" data-testid="metric-critical-issues">{failRate.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
               <span className="text-red-600">+3</span> from last month
             </p>

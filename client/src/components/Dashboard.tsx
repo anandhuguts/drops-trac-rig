@@ -6,6 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { useRigs } from "@/hooks/use-rigs";
+import { useInspectors } from "@/hooks/useInspector";
+import { useState } from "react";
+import { useInspections } from "@/hooks/use-inspections";             
+import { useFilteredInspections } from "@/hooks/useFilteredInspections";
 
 //todo: remove mock functionality
 const severityData = [
@@ -21,13 +26,30 @@ const passFailData = [
 ];
 
 export function Dashboard() {
+   const [selectedPeriod, setSelectedPeriod] = useState("last-30-days");
+    const [selectedRig, setSelectedRig] = useState("all");
+    const [selectedInspector, setSelectedInspector] = useState("all");
+    const [selectedStatus, setSelectedStatus] = useState("all");
+     const { data: rigs = [], isLoading, error } = useRigs();
+     const { data: inspectors = [] } = useInspectors();
+      const { data: inspections = [], isLoading:loading } = useInspections();
+
+  const filteredInspections = useFilteredInspections(
+    inspections,
+    selectedRig,
+    selectedInspector
+  );
+
+  
+
+  
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <KPICard
           title="Total Inspections"
-          value="1,247"
+          value={inspections.length}
           change={{ value: 12, type: "increase" }}
           icon={CheckCircle}
           description="This month"
@@ -77,30 +99,34 @@ export function Dashboard() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Rig</label>
-              <Select>
-                <SelectTrigger data-testid="select-rig">
-                  <SelectValue placeholder="Select rig" />
+                <Select value={selectedRig} onValueChange={setSelectedRig} data-testid="select-rig">
+                <SelectTrigger>
+                  <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Rigs</SelectItem>
-                  <SelectItem value="deepwater-horizon-ii">Deep Water Horizon II</SelectItem>
-                  <SelectItem value="ocean-explorer">Ocean Explorer</SelectItem>
-                  <SelectItem value="north-sea-pioneer">North Sea Pioneer</SelectItem>
-                </SelectContent>
+           <SelectContent>
+                <SelectItem value="all">All Rigs</SelectItem>
+                {rigs.map((rig: any) => (
+                  <SelectItem key={rig._id} value={rig.name}>
+                    {rig.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Inspector</label>
-              <Select>
-                <SelectTrigger data-testid="select-inspector">
-                  <SelectValue placeholder="Select inspector" />
+           <Select value={selectedInspector} onValueChange={setSelectedInspector} data-testid="select-inspector">
+                <SelectTrigger>
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Inspectors</SelectItem>
-                  <SelectItem value="john-smith">John Smith</SelectItem>
-                  <SelectItem value="sarah-jones">Sarah Jones</SelectItem>
-                  <SelectItem value="mike-wilson">Mike Wilson</SelectItem>
-                </SelectContent>
+                <SelectItem value="all">All Inspectors</SelectItem>
+                {inspectors.map((rig: any) => (
+                  <SelectItem key={rig._id} value={rig.name}>
+                    {rig.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
@@ -180,7 +206,7 @@ export function Dashboard() {
           <CardDescription>Latest inspection activities across all rigs</CardDescription>
         </CardHeader>
         <CardContent>
-          <InspectionTable />
+          <InspectionTable inspections={filteredInspections} isLoading={loading} />
         </CardContent>
       </Card>
     </div>
