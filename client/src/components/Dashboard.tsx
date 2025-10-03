@@ -12,65 +12,105 @@ import { useState } from "react";
 import { useInspections } from "@/hooks/use-inspections";             
 import { useFilteredInspections } from "@/hooks/useFilteredInspections";
 
-//todo: remove mock functionality
-const severityData = [
-  { name: "Low", count: 45, fill: "hsl(var(--chart-2))" },
-  { name: "Medium", count: 23, fill: "hsl(var(--chart-3))" },
-  { name: "High", count: 12, fill: "hsl(var(--chart-4))" },
-  { name: "Critical", count: 3, fill: "hsl(var(--destructive))" },
-];
-
-const passFailData = [
-  { name: "Pass", value: 78, fill: "hsl(var(--chart-2))" },
-  { name: "Fail", value: 22, fill: "hsl(var(--chart-4))" },
-];
-
 export function Dashboard() {
-   const [selectedPeriod, setSelectedPeriod] = useState("last-30-days");
-    const [selectedRig, setSelectedRig] = useState("all");
-    const [selectedInspector, setSelectedInspector] = useState("all");
-    const [selectedStatus, setSelectedStatus] = useState("all");
-     const { data: rigs = [], isLoading, error } = useRigs();
-     const { data: inspectors = [] } = useInspectors();
-      const { data: inspections = [], isLoading:loading } = useInspections();
+  const { data: rigs = [], isLoading, error } = useRigs();
+  const { data: inspectors = [] } = useInspectors();
+  const { data: inspections = [], isLoading: loading } = useInspections();
+  
+  const [selectedPeriod, setSelectedPeriod] = useState("last-30-days");
+  const [selectedRig, setSelectedRig] = useState("all");
+  const [selectedInspector, setSelectedInspector] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedSeverity, setSelectedSeverity] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
+  // 🔧 FIX: Pass startDate and endDate to the hook
   const filteredInspections = useFilteredInspections(
     inspections,
     selectedRig,
-    selectedInspector
+    selectedInspector,
+    selectedPeriod,
+    startDate,
+    endDate,
+    selectedStatus,
+    selectedSeverity
   );
 
+  console.log('Dashboard filtered inspections:', filteredInspections.length);
   
+  const totalInspections = filteredInspections.length;
 
-  
+  const passCount = filteredInspections.filter(
+    (i) => i.status.toLowerCase() === "completed" || i.status.toLowerCase() === "pass"
+  ).length;
+
+  const failCount = totalInspections - passCount;
+
+  const passFailData = [
+    { name: "Pass", value: totalInspections ? Math.round((passCount / totalInspections) * 100) : 0, fill: "hsl(var(--chart-2))" },
+    { name: "Fail", value: totalInspections ? Math.round((failCount / totalInspections) * 100) : 0, fill: "hsl(var(--chart-4))" },
+  ];
+
+  const severityLevels = ["low", "medium", "high", "urgent"];
+  const severityColors = [
+    "hsl(var(--chart-2))",
+    "hsl(var(--chart-3))",
+    "hsl(var(--chart-4))",
+    "hsl(var(--destructive))",
+  ];
+
+  const severityData = severityLevels.map((level, index) => {
+    const count = filteredInspections.filter(
+      (i) => i.priority?.toLowerCase() === level
+    ).length;
+
+    return {
+      name: level.charAt(0).toUpperCase() + level.slice(1),
+      count,
+      fill: severityColors[index],
+    };
+  });
+
+  // 🔧 ADD: Reset function
+  const handleReset = () => {
+    setSelectedPeriod("last-30-days");
+    setSelectedRig("all");
+    setSelectedInspector("all");
+    setSelectedStatus("all");
+    setSelectedSeverity("all");
+    setStartDate("");
+    setEndDate("");
+  };
+
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <KPICard
           title="Total Inspections"
-          value={inspections.length}
+          value={filteredInspections.length}
           change={{ value: 12, type: "increase" }}
           icon={CheckCircle}
-          description="This month"
+          description="Filtered results"
         />
         <KPICard
           title="Pending Reviews"
-          value="23"
+          value={filteredInspections.filter(i => i.status.toLowerCase() === "pending").length}
           change={{ value: 5, type: "decrease" }}
           icon={Clock}
           description="Awaiting approval"
         />
         <KPICard
           title="Critical Issues"
-          value="8"
+          value={filteredInspections.filter(i => i.priority?.toLowerCase() === "critical").length}
           change={{ value: 15, type: "increase" }}
           icon={AlertTriangle}
           description="Requires attention"
         />
         <KPICard
           title="Pass Rate"
-          value="78%"
+          value={totalInspections > 0 ? `${Math.round((passCount / totalInspections) * 100)}%` : "0%"}
           change={{ value: 3, type: "increase" }}
           icon={CheckCircle}
           description="Overall compliance"
@@ -92,62 +132,86 @@ export function Dashboard() {
           <div className="grid gap-4 md:grid-cols-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Date Range</label>
-              <div className="flex gap-2">
-                <Input type="date" placeholder="From" data-testid="input-date-from" />
-                <Input type="date" placeholder="To" data-testid="input-date-to" />
+              <div className="flex gap-1">
+                <Input 
+                  type="date" 
+                  className="text-xs" 
+                  data-testid="input-start-date"
+                  value={startDate}
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    setSelectedPeriod("custom");
+                  }}
+                  placeholder="Start"
+                />
+                <Input 
+                  type="date" 
+                  className="text-xs" 
+                  data-testid="input-end-date"
+                  value={endDate}
+                  onChange={(e) => {
+                    setEndDate(e.target.value);
+                    setSelectedPeriod("custom");
+                  }}
+                  placeholder="End"
+                />
               </div>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Rig</label>
-                <Select value={selectedRig} onValueChange={setSelectedRig} data-testid="select-rig">
+              <Select value={selectedRig} onValueChange={setSelectedRig} data-testid="select-rig">
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select rig" />
                 </SelectTrigger>
-           <SelectContent>
-                <SelectItem value="all">All Rigs</SelectItem>
-                {rigs.map((rig: any) => (
-                  <SelectItem key={rig._id} value={rig.name}>
-                    {rig.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
+                <SelectContent>
+                  <SelectItem value="all">All Rigs</SelectItem>
+                  {rigs.map((rig: any) => (
+                    <SelectItem key={rig._id} value={rig.name}>
+                      {rig.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Inspector</label>
-           <Select value={selectedInspector} onValueChange={setSelectedInspector} data-testid="select-inspector">
+              <Select value={selectedInspector} onValueChange={setSelectedInspector} data-testid="select-inspector">
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select inspector" />
                 </SelectTrigger>
                 <SelectContent>
-                <SelectItem value="all">All Inspectors</SelectItem>
-                {inspectors.map((rig: any) => (
-                  <SelectItem key={rig._id} value={rig.name}>
-                    {rig.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
+                  <SelectItem value="all">All Inspectors</SelectItem>
+                  {inspectors.map((inspector: any) => (
+                    <SelectItem key={inspector._id} value={inspector.name}>
+                      {inspector.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Severity</label>
-              <Select>
-                <SelectTrigger data-testid="select-severity">
+              <Select value={selectedSeverity} onValueChange={setSelectedSeverity} data-testid="select-severity">
+                <SelectTrigger>
                   <SelectValue placeholder="Select severity" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="all">All Severities</SelectItem>
+                  <SelectItem value="urgent">Urgent</SelectItem>
                   <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div className="flex gap-2 mt-4">
-            <Button data-testid="button-apply-filters">Apply Filters</Button>
-            <Button variant="outline" data-testid="button-reset-filters">Reset</Button>
+            <Button data-testid="button-apply-filters" onClick={() => console.log('Filters applied')}>
+              Apply Filters
+            </Button>
+            <Button variant="outline" data-testid="button-reset-filters" onClick={handleReset}>
+              Reset
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -203,7 +267,9 @@ export function Dashboard() {
       <Card>
         <CardHeader>
           <CardTitle>Recent Inspections</CardTitle>
-          <CardDescription>Latest inspection activities across all rigs</CardDescription>
+          <CardDescription>
+            Showing {filteredInspections.length} of {inspections.length} total inspections
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <InspectionTable inspections={filteredInspections} isLoading={loading} />

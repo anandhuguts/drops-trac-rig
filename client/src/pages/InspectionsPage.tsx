@@ -11,23 +11,45 @@ import {
 import { InspectionTable } from "@/components/InspectionTable";
 import { Search, Filter, Plus } from "lucide-react";
 import { Link } from "wouter";
-import { useRigs } from "../hooks/use-rigs"; // import your hook
+import { useRigs } from "../hooks/use-rigs";
 import { useInspections } from "@/hooks/use-inspections";
 import { useFilteredInspections } from "@/hooks/useFilteredInspections";
 import { useState } from "react";
 
 export default function InspectionsPage() {
   const { data: rigs = [], isLoading, error } = useRigs();
-   const { data: inspections = [],isLoading:loading } = useInspections();
-    const [selectedPeriod, setSelectedPeriod] = useState("last-30-days");
-     const [selectedRig, setSelectedRig] = useState("all");
-     const [selectedInspector, setSelectedInspector] = useState("all");
+  const { data: inspections = [], isLoading: loading } = useInspections();
+  
+  const [selectedPeriod, setSelectedPeriod] = useState("all"); // Changed to "all" since no period selector on this page
+  const [selectedRig, setSelectedRig] = useState("all");
+  const [selectedInspector, setSelectedInspector] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedSeverity, setSelectedSeverity] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
-    const filteredInspections = useFilteredInspections(
-       inspections,
-       selectedRig,
-       selectedInspector
-     );
+  // 🔧 FIX: Pass all parameters in correct order
+  const filteredInspections = useFilteredInspections(
+    inspections,
+    selectedRig,
+    selectedInspector,
+    selectedPeriod,    // Must be 4th parameter
+    "",                // startDate (empty since no date picker on this page)
+    "",                // endDate (empty since no date picker on this page)
+    selectedStatus,    // Now correctly positioned as 7th parameter
+    selectedSeverity   // Now correctly positioned as 8th parameter
+  );
+
+  // 🔧 ADD: Search functionality
+  const searchFilteredInspections = searchQuery
+    ? filteredInspections.filter(
+        (inspection) =>
+          inspection.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          inspection.rig?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          inspection.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : filteredInspections;
+
+  console.log("Filtered Inspections:", searchFilteredInspections.length);
 
   if (isLoading)
     return (
@@ -75,14 +97,20 @@ export default function InspectionsPage() {
                 placeholder="Search inspections..."
                 className="pl-10"
                 data-testid="input-search-inspections"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
 
-                  <Select value={selectedRig} onValueChange={setSelectedRig} data-testid="select-rig">
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-           <SelectContent>
+            <Select
+              value={selectedRig}
+              onValueChange={setSelectedRig}
+              data-testid="select-rig"
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All Rigs" />
+              </SelectTrigger>
+              <SelectContent>
                 <SelectItem value="all">All Rigs</SelectItem>
                 {rigs.map((rig: any) => (
                   <SelectItem key={rig._id} value={rig.name}>
@@ -90,27 +118,36 @@ export default function InspectionsPage() {
                   </SelectItem>
                 ))}
               </SelectContent>
-              </Select>
+            </Select>
 
-            <Select>
-              <SelectTrigger data-testid="select-status-filter">
-                <SelectValue placeholder="Status" />
+            <Select
+              value={selectedStatus}
+              onValueChange={setSelectedStatus}
+              data-testid="select-status"
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
                 <SelectItem value="in-progress">In Progress</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="fail">Fail</SelectItem>
               </SelectContent>
             </Select>
 
-            <Select>
-              <SelectTrigger data-testid="select-severity-filter">
-                <SelectValue placeholder="Severity" />
+            <Select 
+              value={selectedSeverity} 
+              onValueChange={setSelectedSeverity} 
+              data-testid="select-severity"
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All Severities" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Severities</SelectItem>
-                <SelectItem value="critical">Critical</SelectItem>
+                <SelectItem value="urgent">Urgent</SelectItem>
                 <SelectItem value="high">High</SelectItem>
                 <SelectItem value="medium">Medium</SelectItem>
                 <SelectItem value="low">Low</SelectItem>
@@ -122,10 +159,18 @@ export default function InspectionsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All Inspections</CardTitle>
+          <CardTitle>
+            All Inspections
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
+              ({searchFilteredInspections.length} of {inspections.length})
+            </span>
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <InspectionTable inspections={filteredInspections} isLoading={loading} />
+          <InspectionTable
+            inspections={searchFilteredInspections}
+            isLoading={loading}
+          />
         </CardContent>
       </Card>
     </div>
