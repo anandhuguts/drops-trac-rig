@@ -101,7 +101,8 @@ export function InspectionTable({ inspections, isLoading }: { inspections: any[]
             sortedInspections.map((inspection, index) => (
               <TableRow key={inspection._id} className="hover-elevate">
                 <TableCell className="font-medium">
-                  {`INS-${(index + 1).toString().padStart(3, "0")}`}
+                  {/* {`INS-${(index + 1).toString().padStart(3, "0")}`} */}
+                  {inspection.title}
                 </TableCell>
                 <TableCell>{inspection.rig}</TableCell>
                 <TableCell>

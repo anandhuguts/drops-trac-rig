@@ -37,7 +37,7 @@ export function Dashboard() {
     selectedSeverity
   );
 
-  console.log('Dashboard filtered inspections:', filteredInspections.length);
+  console.log('inspections', inspections);
   
   const totalInspections = filteredInspections.length;
 
@@ -89,21 +89,21 @@ export function Dashboard() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <KPICard
           title="Total Inspections"
-          value={filteredInspections.length}
+          value={inspections.length}
           change={{ value: 12, type: "increase" }}
           icon={CheckCircle}
           description="Filtered results"
         />
         <KPICard
           title="Pending Reviews"
-          value={filteredInspections.filter(i => i.status.toLowerCase() === "pending").length}
+          value={inspections.filter(i => i.status.toLowerCase() === "pending").length}
           change={{ value: 5, type: "decrease" }}
           icon={Clock}
           description="Awaiting approval"
         />
         <KPICard
           title="Critical Issues"
-          value={filteredInspections.filter(i => i.priority?.toLowerCase() === "critical").length}
+          value={inspectors.filter(i => i.priority?.toLowerCase() === "Urgent").length}
           change={{ value: 15, type: "increase" }}
           icon={AlertTriangle}
           description="Requires attention"
