@@ -7,24 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { X, Plus, Calendar, MapPin, Users } from "lucide-react";
-
-const availableInspectors = [
-  { id: "1", name: "John Smith", specialties: ["Safety", "Structural"] },
-  { id: "2", name: "Sarah Jones", specialties: ["Environmental", "Operations"] },
-  { id: "3", name: "Mike Wilson", specialties: ["Equipment", "Maintenance"] },
-  { id: "4", name: "Lisa Chen", specialties: ["Safety", "Quality"] },
-];
-
-const availableRigs = [
-  { id: "1", name: "Deep Water Horizon II", location: "Gulf of Mexico" },
-  { id: "2", name: "Ocean Explorer", location: "North Sea" },
-  { id: "3", name: "North Sea Pioneer", location: "Norwegian Sector" },
-];
+import { X, Calendar, MapPin, Users } from "lucide-react";
 
 export default function NewInspectionPage() {
   const [availableRigs, setAvailableRigs] = useState<{ id: string; name: string; location: string }[]>([]);
-const [availableInspectors, setAvailableInspectors] = useState<{ id: string; name: string; specialties: string[] }[]>([]);
+  const [availableInspectors, setAvailableInspectors] = useState<{ id: string; name: string; specialties: string[] }[]>([]);
 
   const [selectedInspectors, setSelectedInspectors] = useState<string[]>([]);
   const [formData, setFormData] = useState({
@@ -36,10 +23,15 @@ const [availableInspectors, setAvailableInspectors] = useState<{ id: string; nam
     estimatedDuration: "",
   });
 
-    const fetchRigs = async () => {
+  // Function to get token from localStorage
+  const getToken = () => localStorage.getItem("token") || "";
+
+  const fetchRigs = async () => {
     try {
-      const res = await axios.get("https://drop-stack-backend.onrender.com/api/rigs");
-      // Assuming backend returns array of rigs with _id, name, location
+      const token = getToken();
+      const res = await axios.get("https://drop-stack-backend.onrender.com/api/rigs", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const rigsData = res.data.map((rig: any) => ({
         id: rig._id,
         name: rig.name,
@@ -51,10 +43,12 @@ const [availableInspectors, setAvailableInspectors] = useState<{ id: string; nam
     }
   };
 
-  // Fetch inspectors from backend
   const fetchInspectors = async () => {
     try {
-      const res = await axios.get("https://drop-stack-backend.onrender.com/api/inspectors"); // Make sure you have this route
+      const token = getToken();
+      const res = await axios.get("https://drop-stack-backend.onrender.com/api/inspectors", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const inspectorsData = res.data.map((inspector: any) => ({
         id: inspector._id,
         name: inspector.name,
@@ -81,46 +75,44 @@ const [availableInspectors, setAvailableInspectors] = useState<{ id: string; nam
     setSelectedInspectors(selectedInspectors.filter(id => id !== inspectorId));
   };
 
-const handleSubmit = async () => {
-  try {
-    // Prepare payload
-    const payload = {
-      title: formData.title,
-      priority: formData.priority.charAt(0).toUpperCase() + formData.priority.slice(1), // 'medium' -> 'Medium'
-      description: formData.description,
-      scheduleDate: formData.scheduledDate,
-      estimatedDuration: Number(formData.estimatedDuration),
-      rig: selectedRig?.name || "",
-      inspectors: selectedInspectors.map(id => {
-        const inspector = availableInspectors.find(i => i.id === id);
-        return inspector ? inspector.name : "";
-      })
-    };
-
-    // Send POST request
-    const response = await axios.post("https://drop-stack-backend.onrender.com/inspections", payload);
-
-    console.log("Inspection created successfully:", response.data);
-    alert("Inspection created successfully!");
-
-    // Reset form
-    setFormData({
-      title: "",
-      rigId: "",
-      scheduledDate: "",
-      description: "",
-      priority: "medium",
-      estimatedDuration: "",
-    });
-    setSelectedInspectors([]);
-
-  } catch (err: any) {
-    console.error("Error creating inspection:", err.response?.data || err.message);
-    alert("Failed to create inspection: " + (err.response?.data?.error || err.message));
-  }
-};
-
   const selectedRig = availableRigs.find(rig => rig.id === formData.rigId);
+
+  const handleSubmit = async () => {
+    try {
+      const token = getToken();
+      const payload = {
+        title: formData.title,
+        priority: formData.priority.charAt(0).toUpperCase() + formData.priority.slice(1),
+        description: formData.description,
+        scheduleDate: formData.scheduledDate,
+        estimatedDuration: Number(formData.estimatedDuration),
+        rig: selectedRig?.name || "",
+        inspectors: selectedInspectors.map(id => availableInspectors.find(i => i.id === id)?.name || ""),
+      };
+
+      const response = await axios.post(
+        "https://drop-stack-backend.onrender.com/inspections",
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      console.log("Inspection created successfully:", response.data);
+      alert("Inspection created successfully!");
+
+      setFormData({
+        title: "",
+        rigId: "",
+        scheduledDate: "",
+        description: "",
+        priority: "medium",
+        estimatedDuration: "",
+      });
+      setSelectedInspectors([]);
+    } catch (err: any) {
+      console.error("Error creating inspection:", err.response?.data || err.message);
+      alert("Failed to create inspection: " + (err.response?.data?.error || err.message));
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -129,6 +121,7 @@ const handleSubmit = async () => {
         <p className="text-muted-foreground">Create and schedule a new inspection for your rigs</p>
       </div>
 
+      {/* Inspection Details */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -144,17 +137,16 @@ const handleSubmit = async () => {
                 placeholder="e.g., Weekly Safety Inspection"
                 value={formData.title}
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                data-testid="input-inspection-title"
               />
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Priority</label>
               <Select
                 value={formData.priority}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, priority: value }))}
               >
-                <SelectTrigger data-testid="select-priority">
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -174,7 +166,6 @@ const handleSubmit = async () => {
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={3}
-              data-testid="textarea-description"
             />
           </div>
 
@@ -185,10 +176,9 @@ const handleSubmit = async () => {
                 type="datetime-local"
                 value={formData.scheduledDate}
                 onChange={(e) => setFormData(prev => ({ ...prev, scheduledDate: e.target.value }))}
-                data-testid="input-scheduled-date"
               />
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Estimated Duration (hours)</label>
               <Input
@@ -196,13 +186,13 @@ const handleSubmit = async () => {
                 placeholder="8"
                 value={formData.estimatedDuration}
                 onChange={(e) => setFormData(prev => ({ ...prev, estimatedDuration: e.target.value }))}
-                data-testid="input-duration"
               />
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Select Rig */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -215,7 +205,7 @@ const handleSubmit = async () => {
             value={formData.rigId}
             onValueChange={(value) => setFormData(prev => ({ ...prev, rigId: value }))}
           >
-            <SelectTrigger data-testid="select-rig">
+            <SelectTrigger>
               <SelectValue placeholder="Choose a rig for inspection" />
             </SelectTrigger>
             <SelectContent>
@@ -226,7 +216,7 @@ const handleSubmit = async () => {
               ))}
             </SelectContent>
           </Select>
-          
+
           {selectedRig && (
             <div className="mt-4 p-4 bg-muted rounded-lg">
               <h3 className="font-medium">{selectedRig.name}</h3>
@@ -236,6 +226,7 @@ const handleSubmit = async () => {
         </CardContent>
       </Card>
 
+      {/* Assign Inspectors */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -253,34 +244,23 @@ const handleSubmit = async () => {
                   className={`p-3 border rounded-lg cursor-pointer hover-elevate ${
                     selectedInspectors.includes(inspector.id) ? "border-primary bg-primary/5" : ""
                   }`}
-                  onClick={() => 
-                    selectedInspectors.includes(inspector.id) 
-                      ? removeInspector(inspector.id)
-                      : addInspector(inspector.id)
-                  }
-                  data-testid={`inspector-card-${inspector.id}`}
+                  onClick={() => selectedInspectors.includes(inspector.id) ? removeInspector(inspector.id) : addInspector(inspector.id)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-8 w-8">
-                        <AvatarFallback>
-                          {inspector.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
+                        <AvatarFallback>{inspector.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                       </Avatar>
                       <div>
                         <p className="font-medium text-sm">{inspector.name}</p>
                         <div className="flex gap-1">
-                          {inspector.specialties.map((specialty) => (
-                            <Badge key={specialty} variant="secondary" className="text-xs">
-                              {specialty}
-                            </Badge>
+                          {inspector.specialties.map(s => (
+                            <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>
                           ))}
                         </div>
                       </div>
                     </div>
-                    {selectedInspectors.includes(inspector.id) && (
-                      <div className="text-primary">✓</div>
-                    )}
+                    {selectedInspectors.includes(inspector.id) && <div className="text-primary">✓</div>}
                   </div>
                 </div>
               ))}
@@ -291,16 +271,12 @@ const handleSubmit = async () => {
             <div className="space-y-2">
               <label className="text-sm font-medium">Selected Inspectors ({selectedInspectors.length})</label>
               <div className="flex flex-wrap gap-2">
-                {selectedInspectors.map((inspectorId) => {
-                  const inspector = availableInspectors.find(i => i.id === inspectorId);
+                {selectedInspectors.map(id => {
+                  const inspector = availableInspectors.find(i => i.id === id);
                   return inspector ? (
-                    <div key={inspectorId} className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
+                    <div key={id} className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
                       {inspector.name}
-                      <button
-                        onClick={() => removeInspector(inspectorId)}
-                        className="hover:bg-primary/20 rounded-full p-1"
-                        data-testid={`remove-inspector-${inspectorId}`}
-                      >
+                      <button onClick={() => removeInspector(id)} className="hover:bg-primary/20 rounded-full p-1">
                         <X className="h-3 w-3" />
                       </button>
                     </div>
@@ -313,17 +289,10 @@ const handleSubmit = async () => {
       </Card>
 
       <div className="flex gap-4">
-        <Button
-          onClick={handleSubmit}
-          className="flex-1"
-          disabled={!formData.title || !formData.rigId || selectedInspectors.length === 0}
-          data-testid="button-create-inspection"
-        >
+        <Button onClick={handleSubmit} className="flex-1" disabled={!formData.title || !formData.rigId || selectedInspectors.length === 0}>
           Create Inspection
         </Button>
-        <Button variant="outline" data-testid="button-cancel">
-          Cancel
-        </Button>
+        <Button variant="outline">Cancel</Button>
       </div>
     </div>
   );

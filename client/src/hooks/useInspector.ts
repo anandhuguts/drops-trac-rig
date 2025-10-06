@@ -1,25 +1,27 @@
+// hooks/use-inspectors.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import api from "../lib/api"; // axios instance with token interceptor
 
-const API_BASE = "https://drop-stack-backend.onrender.com/api/inspectors";
+const API_PATH = "/api/inspectors";
 
-// ✅ Fetch all inspectors
-export const useInspectors = () => {
-  return useQuery({
+// Fetch all inspectors
+export const useInspectors = () =>
+  useQuery({
     queryKey: ["inspectors"],
     queryFn: async () => {
-      const res = await axios.get(API_BASE);
+      const res = await api.get(API_PATH); // token attached automatically
       return res.data;
     },
+    staleTime: 1000 * 60 * 5,
+    retry: false,
   });
-};
 
-// ✅ Add inspector
+// Add inspector
 export const useAddInspector = () => {
   const queryClient = useQueryClient();
-  return useMutation<any, Error, { name: string; specialties: string[] }>({
-    mutationFn: async (data) => {
-      const res = await axios.post(API_BASE, data);
+  return useMutation({
+    mutationFn: async (data: { name: string; specialties: string[] }) => {
+      const res = await api.post(API_PATH, data);
       return res.data;
     },
     onSuccess: () => {
@@ -28,12 +30,12 @@ export const useAddInspector = () => {
   });
 };
 
-// ✅ Update inspector
+// Update inspector
 export const useUpdateInspector = () => {
   const queryClient = useQueryClient();
-  return useMutation<any, Error, { id: string; data: { name: string; specialties: string[] } }>({
-    mutationFn: async ({ id, data }) => {
-      const res = await axios.put(`${API_BASE}/${id}`, data);
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: { name: string; specialties: string[] } }) => {
+      const res = await api.put(`${API_PATH}/${id}`, data);
       return res.data;
     },
     onSuccess: () => {
@@ -42,12 +44,12 @@ export const useUpdateInspector = () => {
   });
 };
 
-// ✅ Delete inspector
+// Delete inspector
 export const useDeleteInspector = () => {
   const queryClient = useQueryClient();
-  return useMutation<any, Error, string>({
-    mutationFn: async (id) => {
-      const res = await axios.delete(`${API_BASE}/${id}`);
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.delete(`${API_PATH}/${id}`);
       return res.data;
     },
     onSuccess: () => {

@@ -1,25 +1,27 @@
+// hooks/use-rigs.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import api from "../lib/api.ts"; // axios instance with token interceptor
 
-const API_BASE = "https://drop-stack-backend.onrender.com/api/rigs";
+const API_PATH = "/api/rigs";
 
 // Fetch all rigs
-export const useRigs = () => {
-  return useQuery({
+export const useRigs = () =>
+  useQuery({
     queryKey: ["rigs"],
     queryFn: async () => {
-      const res = await axios.get(API_BASE);
+      const res = await api.get(API_PATH); // token automatically attached
       return res.data;
     },
+    staleTime: 1000 * 60 * 5, // optional cache 5 mins
+    retry: false,
   });
-};
 
 // Add rig
 export const useAddRig = () => {
   const queryClient = useQueryClient();
-  return useMutation<any, Error, { name: string; location: string }>({
-    mutationFn: async (data) => {
-      const res = await axios.post(API_BASE, data);
+  return useMutation({
+    mutationFn: async (data: { name: string; location: string }) => {
+      const res = await api.post(API_PATH, data);
       return res.data;
     },
     onSuccess: () => {
@@ -31,9 +33,9 @@ export const useAddRig = () => {
 // Update rig
 export const useUpdateRig = () => {
   const queryClient = useQueryClient();
-  return useMutation<any, Error, { id: string; data: { name: string; location: string } }>({
-    mutationFn: async ({ id, data }) => {
-      const res = await axios.put(`${API_BASE}/${id}`, data);
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: { name: string; location: string } }) => {
+      const res = await api.put(`${API_PATH}/${id}`, data);
       return res.data;
     },
     onSuccess: () => {
@@ -45,9 +47,9 @@ export const useUpdateRig = () => {
 // Delete rig
 export const useDeleteRig = () => {
   const queryClient = useQueryClient();
-  return useMutation<any, Error, string>({
-    mutationFn: async (id) => {
-      const res = await axios.delete(`${API_BASE}/${id}`);
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.delete(`${API_PATH}/${id}`);
       return res.data;
     },
     onSuccess: () => {

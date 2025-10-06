@@ -1,31 +1,30 @@
 // hooks/use-inspections.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import api from "../lib/api"; // use the axios instance with interceptors
 
-const API_BASE = "https://drop-stack-backend.onrender.com/inspections";
+const API_PATH = "/inspections";
 
 // Fetch all inspections
-export const useInspections = () => {
-  return useQuery({
+export const useInspections = () =>
+  useQuery({
     queryKey: ["inspections"],
     queryFn: async () => {
-      const res = await axios.get(API_BASE);
+      const res = await api.get(API_PATH); // token automatically attached by interceptor
       return res.data;
     },
+    staleTime: 1000 * 60 * 5, // cache 5 mins
+    retry: true, // don't auto retry
   });
-};
 
 // Add new inspection
 export const useAddInspection = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: any) => {
-      const res = await axios.post(API_BASE, data);
+      const res = await api.post(API_PATH, data);
       return res.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["inspections"] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["inspections"] }),
   });
 };
 
@@ -34,12 +33,10 @@ export const useUpdateInspection = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const res = await axios.put(`${API_BASE}/${id}`, data);
+      const res = await api.put(`${API_PATH}/${id}`, data);
       return res.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["inspections"] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["inspections"] }),
   });
 };
 
@@ -48,11 +45,9 @@ export const useDeleteInspection = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const res = await axios.delete(`${API_BASE}/${id}`);
+      const res = await api.delete(`${API_PATH}/${id}`);
       return res.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["inspections"] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["inspections"] }),
   });
 };

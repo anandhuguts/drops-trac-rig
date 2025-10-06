@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building, Settings, Users, Image, Globe } from "lucide-react";
 
 export default function SettingsPage() {
+
+  console.log("hi")
   return (
     <div className="space-y-6">
       <div>

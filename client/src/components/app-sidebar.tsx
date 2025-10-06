@@ -16,7 +16,7 @@ import dropsTracLogo from "@assets/generated_images/e28805cb-6174-4d0d-960b-b4be
 const items = [
   {
     title: "Dashboard",
-    url: "/",
+    url: "/dashboard",
     icon: Home,
   },
   {
