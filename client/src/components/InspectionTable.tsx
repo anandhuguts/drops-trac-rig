@@ -43,10 +43,16 @@ export function InspectionTable({ inspections, isLoading }: { inspections: any[]
   };
 
   const handleDownload = async (id: string) => {
+     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(
-        `https://drop-stack-backend.onrender.com/api/inspections/${id}/pdf`
-      );
+     const response = await fetch(
+    `https://drop-stack-backend.onrender.com/api/inspections/${id}/pdf`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
