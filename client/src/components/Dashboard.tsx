@@ -82,7 +82,7 @@ export function Dashboard() {
     setStartDate("");
     setEndDate("");
   };
-
+ 
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
@@ -103,7 +103,7 @@ export function Dashboard() {
         />
         <KPICard
           title="Critical Issues"
-          value={inspectors.filter(i => i.priority?.toLowerCase() === "Urgent").length}
+          value={ inspections.filter(i => i.priority === "Urgent").length}
           change={{ value: 15, type: "increase" }}
           icon={AlertTriangle}
           description="Requires attention"

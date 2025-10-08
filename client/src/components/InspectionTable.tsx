@@ -22,7 +22,7 @@ export function InspectionTable({ inspections, isLoading }: { inspections: any[]
   const [selectedInspection, setSelectedInspection] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-
+console.log(inspections)
   // ---------- Handlers ----------
   const handleView = (inspection: any) => {
     setSelectedInspection(inspection);
@@ -108,7 +108,7 @@ export function InspectionTable({ inspections, isLoading }: { inspections: any[]
               <TableRow key={inspection._id} className="hover-elevate">
                 <TableCell className="font-medium">
                   {/* {`INS-${(index + 1).toString().padStart(3, "0")}`} */}
-                  {inspection.title}
+                  {inspection.inspectionId}
                 </TableCell>
                 <TableCell>{inspection.rig}</TableCell>
                 <TableCell>
@@ -140,8 +140,30 @@ export function InspectionTable({ inspections, isLoading }: { inspections: any[]
                     variant="severity"
                   />
                 </TableCell>
-                <TableCell>-</TableCell>
-                <TableCell>-</TableCell>
+                <TableCell>
+  {/* Completion Rate Badge */}
+  <span
+    className={`px-2 py-1 rounded-full font-medium text-white ${
+      inspection.completionRate >= 90
+        ? "bg-green-600"
+        : inspection.completionRate >= 70
+        ? "bg-yellow-500"
+        : "bg-red-500"
+    }`}
+  >
+    {inspection.completionRate}%
+  </span>
+</TableCell>
+
+<TableCell>
+  {/* Issues truncated if > 10 chars */}
+  <span className="text-sm text-red-600">
+    {inspection.issues && inspection.issues.length > 10
+      ? inspection.issues.slice(0, 10) + "..."
+      : inspection.issues || "No Issues"}
+  </span>
+</TableCell>
+
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <Button size="icon" variant="ghost" onClick={() => handleView(inspection)}>

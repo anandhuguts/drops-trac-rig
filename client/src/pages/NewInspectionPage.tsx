@@ -61,6 +61,7 @@ export default function NewInspectionPage() {
   };
 
   useEffect(() => {
+    console.log("Fetching rigs and inspectors...");
     fetchRigs();
     fetchInspectors();
   }, []);

@@ -13,7 +13,9 @@ interface Inspection {
   estimatedDuration: number;
   rig: string;
   inspectors?: string[];
-  status?: "pending" | "in-progress" | "completed" | "fail"; // ✅ add this
+  status?: "pending" | "in-progress" | "completed" | "fail";
+  completionRate?: number; // ✅ new
+  issues?: string;         // ✅ new
   createdAt?: string;
   updatedAt?: string;
 }
@@ -38,13 +40,15 @@ export default function EditInspectionForm({
     setFormData({
       ...formData,
       [e.target.name]:
-        e.target.type === "number" ? Number(e.target.value) : e.target.value,
+        e.target.type === "number" || e.target.type === "range"
+          ? Number(e.target.value)
+          : e.target.value,
     });
   };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    onSave(formData); // pass updated data back
+    onSave(formData);
   };
 
   return (
@@ -112,21 +116,49 @@ export default function EditInspectionForm({
           <option value="Urgent">Urgent</option>
         </select>
       </div>
-      <div>
-  <label className="block text-sm font-medium">Status</label>
-  <select
-    name="status"
-    value={formData.status || "pending"}
-    onChange={handleChange}
-    className="w-full border rounded-md p-2"
-  >
-    <option value="pending">Pending</option>
-    <option value="in-progress">In Progress</option>
-    <option value="completed">Completed</option>
-    <option value="fail">Fail</option>
-  </select>
-</div>
 
+      <div>
+        <label className="block text-sm font-medium">Status</label>
+        <select
+          name="status"
+          value={formData.status || "pending"}
+          onChange={handleChange}
+          className="w-full border rounded-md p-2"
+        >
+          <option value="pending">Pending</option>
+          <option value="in-progress">In Progress</option>
+          <option value="completed">Completed</option>
+          <option value="fail">Fail</option>
+        </select>
+      </div>
+
+      {/* ✅ Completion Rate as range slider */}
+      <div>
+        <label className="block text-sm font-medium">
+          Completion Rate: {formData.completionRate ?? 0}%
+        </label>
+        <input
+          type="range"
+          name="completionRate"
+          min="0"
+          max="100"
+          step="1"
+          value={formData.completionRate ?? 0}
+          onChange={handleChange}
+          className="w-full accent-blue-600 cursor-pointer"
+        />
+      </div>
+
+      {/* ✅ New field: issues */}
+      <div>
+        <label className="block text-sm font-medium">Issues</label>
+        <Textarea
+          name="issues"
+          value={formData.issues || ""}
+          onChange={handleChange}
+          placeholder="Describe any issues found during inspection"
+        />
+      </div>
 
       <div className="flex justify-end gap-2">
         {onCancel && (

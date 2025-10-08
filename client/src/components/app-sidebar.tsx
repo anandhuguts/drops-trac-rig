@@ -46,11 +46,11 @@ const items = [
     icon: Axe,
   },
 
-  {
-    title: "Settings",
-    url: "/settings",
-    icon: Settings,
-  },
+  // {
+  //   title: "Settings",
+  //   url: "/settings",
+  //   icon: Settings,
+  // },
 ];
 
 const aiItems = [

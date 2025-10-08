@@ -66,40 +66,6 @@ const COLORS = [
   "#8b5cf6",
 ];
 
-const monthlyInspections = [
-  { month: "Jan", total: 45, completed: 42, overdue: 3 },
-  { month: "Feb", total: 52, completed: 48, overdue: 10 },
-  { month: "Mar", total: 38, completed: 36, overdue: 2 },
-  { month: "Apr", total: 67, completed: 61, overdue: 6 },
-  { month: "May", total: 58, completed: 54, overdue: 4 },
-  { month: "Jun", total: 71, completed: 67, overdue: 4 },
-];
-
-const complianceTrend = [
-  { week: "Week 1", compliance: 89 },
-  { week: "Week 2", compliance: 92 },
-  { week: "Week 3", compliance: 87 },
-  { week: "Week 4", compliance: 94 },
-  { week: "Week 5", compliance: 91 },
-  { week: "Week 6", compliance: 96 },
-];
-
-const rigPerformance = [
-  { rig: "Rig-001", inspections: 24, issues: 8, compliance: 92 },
-  { rig: "Rig-002", inspections: 31, issues: 12, compliance: 87 },
-  { rig: "Rig-003", inspections: 18, issues: 3, compliance: 98 },
-  { rig: "Rig-004", inspections: 29, issues: 15, compliance: 76 },
-  { rig: "Rig-005", inspections: 22, issues: 6, compliance: 94 },
-];
-
-const inspectorStats = [
-  { inspector: "John Smith", inspections: 67, avgTime: 45, quality: 94 },
-  { inspector: "Sarah Jones", inspections: 54, avgTime: 38, quality: 97 },
-  { inspector: "Mike Wilson", inspections: 72, avgTime: 52, quality: 89 },
-  { inspector: "Lisa Chen", inspections: 43, avgTime: 41, quality: 96 },
-  { inspector: "David Brown", inspections: 58, avgTime: 47, quality: 91 },
-];
-
 const recentReports = [
   {
     id: "RPT-001",
@@ -135,7 +101,7 @@ export default function ReportsPage() {
   const [selectedRig, setSelectedRig] = useState("all");
   const [selectedInspector, setSelectedInspector] = useState("all");
 
-  // 🔧 ADD: State for custom date range
+  // State for custom date range
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
@@ -143,7 +109,7 @@ export default function ReportsPage() {
   const { data: inspectors = [] } = useInspectors();
   const { data: inspections = [] } = useInspections();
 
-  // 🔧 FIX: Pass startDate and endDate to the hook
+  // Pass startDate and endDate to the hook
   const filteredInspections = useFilteredInspections(
     inspections,
     selectedRig,
@@ -176,9 +142,9 @@ export default function ReportsPage() {
     ).length;
 
     return [
-      { severity: "High Priority", count: highCount, color: "#ff0000" },
-      { severity: "Medium Priority", count: mediumCount, color: "#ef4444" },
-      { severity: "Urgent Priority", count: urgentCount, color: "#f97316" },
+      { severity: "Urgent Priority", count: urgentCount, color: "#dc2626" },
+      { severity: "High Priority", count: highCount, color: "#f97316" },
+      { severity: "Medium Priority", count: mediumCount, color: "#eab308" },
       { severity: "Low Priority", count: lowCount, color: "#22c55e" },
     ].filter((item) => item.count > 0);
   };
@@ -187,19 +153,62 @@ export default function ReportsPage() {
 
   const rigPerformance = getRigPerformance(rigs, inspections);
 
+  // Calculate inspector statistics dynamically
+  const getInspectorStats = () => {
+    const stats = new Map();
+    
+    filteredInspections.forEach((inspection) => {
+      if (inspection.inspectors && Array.isArray(inspection.inspectors)) {
+        inspection.inspectors.forEach((inspectorName) => {
+          if (!stats.has(inspectorName)) {
+            stats.set(inspectorName, {
+              inspector: inspectorName,
+              inspections: 0,
+              completed: 0,
+              pending: 0,
+              failed: 0,
+            });
+          }
+          
+          const stat = stats.get(inspectorName);
+          stat.inspections += 1;
+          
+          if (inspection.status === "completed") {
+            stat.completed += 1;
+          } else if (inspection.status === "pending") {
+            stat.pending += 1;
+          } else if (inspection.status === "fail") {
+            stat.failed += 1;
+          }
+        });
+      }
+    });
+    
+    // Calculate quality score based on completion rate
+    return Array.from(stats.values()).map((stat) => ({
+      ...stat,
+      quality: stat.inspections > 0 
+        ? Math.round((stat.completed / stat.inspections) * 100)
+        : 0,
+    })).sort((a, b) => b.inspections - a.inspections);
+  };
+
+  const inspectorStats = getInspectorStats();
+
   const total = filteredInspections.length;
   const completed = filteredInspections.filter(
     (i) => i.status === "completed"
   ).length;
   const fail = filteredInspections.filter((i) => i.status === "fail").length;
-  const critical = filteredInspections.filter(
-    (i) => i.priority === "Low"
+  const criticalIssues = filteredInspections.filter(
+    (i) => i.priority === "Urgent" || i.priority === "High"
   ).length;
 
   const complianceRate = total === 0 ? 0 : (completed / total) * 100;
   const failRate = total === 0 ? 0 : (fail / total) * 100;
   const monthlyInspections = getMonthlyInspectionStats(inspections);
 
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -349,7 +358,7 @@ export default function ReportsPage() {
               {filteredInspections.length}
             </div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+12%</span> from last month
+              In selected period
             </p>
           </CardContent>
         </Card>
@@ -365,10 +374,10 @@ export default function ReportsPage() {
               className="text-2xl font-bold text-green-600"
               data-testid="metric-compliance-rate"
             >
-              {complianceRate.toFixed(2)}%
+              {complianceRate.toFixed(1)}%
             </div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+2.1%</span> from last month
+              {completed} of {total} completed
             </p>
           </CardContent>
         </Card>
@@ -384,29 +393,29 @@ export default function ReportsPage() {
               className="text-2xl font-bold text-red-600"
               data-testid="metric-critical-issues"
             >
-              {failRate.toFixed(2)}
+              {criticalIssues}
             </div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-red-600">+3</span> from last month
+              Urgent & High priority
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Avg Response Time
+              Failure Rate
             </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div
-              className="text-2xl font-bold"
+              className="text-2xl font-bold text-orange-600"
               data-testid="metric-response-time"
             >
-              2.3h
+              {failRate.toFixed(1)}%
             </div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">-0.4h</span> from last month
+              {fail} failed inspections
             </p>
           </CardContent>
         </Card>
@@ -464,37 +473,45 @@ export default function ReportsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <RechartsPieChart>
-                    <Pie
-                      data={severityBreakdown}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={120}
-                      paddingAngle={5}
-                      dataKey="count"
-                    >
-                      {severityBreakdown.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
+                {severityBreakdown.length > 0 ? (
+                  <>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <RechartsPieChart>
+                        <Pie
+                          data={severityBreakdown}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={120}
+                          paddingAngle={5}
+                          dataKey="count"
+                        >
+                          {severityBreakdown.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </RechartsPieChart>
+                    </ResponsiveContainer>
+                    <div className="flex justify-center gap-4 mt-4 flex-wrap">
+                      {severityBreakdown.map((item, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: item.color }}
+                          />
+                          <span className="text-sm">
+                            {item.severity}: {item.count}
+                          </span>
+                        </div>
                       ))}
-                    </Pie>
-                    <Tooltip />
-                  </RechartsPieChart>
-                </ResponsiveContainer>
-                <div className="flex justify-center gap-4 mt-4 flex-wrap">
-                  {severityBreakdown.map((item, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <span className="text-sm">
-                        {item.severity}: {item.count}
-                      </span>
                     </div>
-                  ))}
-                </div>
+                  </>
+                ) : (
+                  <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                    No severity data available
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -504,32 +521,6 @@ export default function ReportsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Compliance Trend</CardTitle>
-                <CardDescription>
-                  Weekly compliance rate over time
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={complianceTrend}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="week" />
-                    <YAxis domain={[80, 100]} />
-                    <Tooltip />
-                    <Area
-                      type="monotone"
-                      dataKey="compliance"
-                      stroke="#22c55e"
-                      fill="#22c55e"
-                      fillOpacity={0.3}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
                 <CardTitle>Rig Compliance Performance</CardTitle>
                 <CardDescription>
                   Compliance rates by individual rig
@@ -537,17 +528,23 @@ export default function ReportsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {rigPerformance.map((rig, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">{rig.rig}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {rig.compliance}%
-                        </span>
+                  {rigPerformance.length > 0 ? (
+                    rigPerformance.map((rig, index) => (
+                      <div key={index} className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">{rig.rig}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {rig.compliance}%
+                          </span>
+                        </div>
+                        <Progress value={rig.compliance} className="h-2" />
                       </div>
-                      <Progress value={rig.compliance} className="h-2" />
+                    ))
+                  ) : (
+                    <div className="text-center text-muted-foreground py-8">
+                      No rig performance data available
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -568,38 +565,50 @@ export default function ReportsPage() {
                   <thead>
                     <tr className="border-b">
                       <th className="text-left p-2">Inspector</th>
-                      <th className="text-left p-2">Inspections</th>
-                      <th className="text-left p-2">Avg Time (min)</th>
-                      <th className="text-left p-2">Quality Score</th>
+                      <th className="text-left p-2">Total Inspections</th>
+                      <th className="text-left p-2">Completed</th>
+                      <th className="text-left p-2">Pending</th>
+                      <th className="text-left p-2">Failed</th>
+                      <th className="text-left p-2">Success Rate</th>
                       <th className="text-left p-2">Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {inspectorStats.map((inspector, index) => (
-                      <tr key={index} className="border-b">
-                        <td className="p-2 font-medium">
-                          {inspector.inspector}
-                        </td>
-                        <td className="p-2">{inspector.inspections}</td>
-                        <td className="p-2">{inspector.avgTime}</td>
-                        <td className="p-2">
-                          <Badge
-                            variant={
-                              inspector.quality >= 95
-                                ? "default"
-                                : inspector.quality >= 90
-                                ? "secondary"
-                                : "destructive"
-                            }
-                          >
-                            {inspector.quality}%
-                          </Badge>
-                        </td>
-                        <td className="p-2">
-                          <Badge variant="outline">Active</Badge>
+                    {inspectorStats.length > 0 ? (
+                      inspectorStats.map((inspector, index) => (
+                        <tr key={index} className="border-b">
+                          <td className="p-2 font-medium">
+                            {inspector.inspector}
+                          </td>
+                          <td className="p-2">{inspector.inspections}</td>
+                          <td className="p-2 text-green-600">{inspector.completed}</td>
+                          <td className="p-2 text-yellow-600">{inspector.pending}</td>
+                          <td className="p-2 text-red-600">{inspector.failed}</td>
+                          <td className="p-2">
+                            <Badge
+                              variant={
+                                inspector.quality >= 95
+                                  ? "default"
+                                  : inspector.quality >= 80
+                                  ? "secondary"
+                                  : "destructive"
+                              }
+                            >
+                              {inspector.quality}%
+                            </Badge>
+                          </td>
+                          <td className="p-2">
+                            <Badge variant="outline">Active</Badge>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={7} className="p-4 text-center text-muted-foreground">
+                          No inspector data available
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -614,23 +623,29 @@ export default function ReportsPage() {
               <CardDescription>Issues vs inspections by rig</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart
-                  data={rigPerformance}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="rig" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar
-                    dataKey="inspections"
-                    fill="#3b82f6"
-                    name="Inspections"
-                  />
-                  <Bar dataKey="issues" fill="#ef4444" name="Issues" />
-                </BarChart>
-              </ResponsiveContainer>
+              {rigPerformance.length > 0 ? (
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart
+                    data={rigPerformance}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="rig" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar
+                      dataKey="inspections"
+                      fill="#3b82f6"
+                      name="Inspections"
+                    />
+                    <Bar dataKey="issues" fill="#ef4444" name="Issues" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+                  No rig performance data available
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

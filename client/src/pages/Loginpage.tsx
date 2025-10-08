@@ -47,11 +47,11 @@ function LoginPage() {
       >
         {/* Logo */}
      <div className="flex justify-center mb-6">
-  <div className="w-20 h-20 rounded-2xl flex items-center justify-center ">
+  <div className="w-25 h-25  flex items-center justify-center ">
     <img
       src={dropsTracLogo}
       alt="DropsTrac Logo"
-      className="w-16 h-16 object-contain"
+      className="w-25 h-25 "
       loading="eager"
       decoding="async"
       style={{
