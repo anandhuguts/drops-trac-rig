@@ -20,7 +20,6 @@ function LoginPage() {
 
     try {
       const res = await api.post("/api/auth/login", { email, password });
-      
       if (res.data.token) {
         setToken(res.data.token);
         setLocation("/dashboard");
@@ -28,11 +27,7 @@ function LoginPage() {
         setError(res.data.message || "Invalid credentials");
       }
     } catch (err: any) {
-      if (err.isAuthError) {
-        setError(err.message);
-      } else {
-        setError(err.response?.data?.message || "Something went wrong");
-      }
+      setError(err.response?.data?.message || "Something went wrong");
       console.error(err);
     } finally {
       setLoading(false);
@@ -40,36 +35,29 @@ function LoginPage() {
   }
 
   return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-sky-50 via-blue-100 to-sky-200">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-sky-50 via-blue-100 to-sky-200">
       <form
         onSubmit={handleLogin}
-        className="bg-white/80 backdrop-blur-md p-10 shadow-2xl rounded-3xl w-[420px] border border-white/20"
+        className="bg-white/90 backdrop-blur-md p-10 shadow-2xl rounded-3xl w-[420px] border border-white/20"
       >
         {/* Logo */}
-     <div className="flex justify-center mb-6">
-  <div className="w-25 h-25  flex items-center justify-center ">
-    <img
-      src={dropsTracLogo}
-      alt="DropsTrac Logo"
-      className="w-25 h-25 "
-      loading="eager"
-      decoding="async"
-      style={{
-        imageRendering: "crisp-edges",
-        WebkitFilter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))",
-      }}
-    />
-  </div>
+<div className="flex justify-center mb-8">
+  <img
+    src={dropsTracLogo}
+    alt="DropsTrac Logo"
+    className="w-[160px]  object-contain"
+    loading="eager"
+    decoding="async"
+    style={{ imageRendering: "crisp-edges" }}
+  />
 </div>
-
 
         {/* Title */}
         <h1 className="text-3xl font-bold text-center mb-2 text-gray-900">
           Rig Inspection Portal
         </h1>
         <p className="text-center text-sm text-gray-500 mb-8">
-          Access your inspection dashboard, manage reports,<br />
-          and monitor rigs in real-time.
+          Access your dashboard, manage reports, and monitor rigs in real-time.
         </p>
 
         {/* Error Message */}
@@ -79,11 +67,20 @@ function LoginPage() {
           </div>
         )}
 
-        {/* Username Input */}
+        {/* Email Input */}
         <div className="mb-4 relative">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2">
+          <input
+            type="text"
+            placeholder="Email"
+            className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-0 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            disabled={loading}
+          />
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
             <svg
-              className="w-5 h-5 text-gray-400"
+              className="w-5 h-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -96,22 +93,22 @@ function LoginPage() {
               />
             </svg>
           </div>
-          <input
-            type="text"
-            placeholder="Username"
-            className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-0 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            disabled={loading}
-          />
         </div>
 
         {/* Password Input */}
         <div className="mb-6 relative">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2">
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Password"
+            className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border-0 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            disabled={loading}
+          />
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
             <svg
-              className="w-5 h-5 text-gray-400"
+              className="w-5 h-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -124,15 +121,6 @@ function LoginPage() {
               />
             </svg>
           </div>
-          <input
-            type={showPassword ? "text" : "password"}
-            placeholder="Password"
-            className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border-0 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={loading}
-          />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
