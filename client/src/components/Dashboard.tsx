@@ -25,7 +25,6 @@ export function Dashboard() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  // 🔧 FIX: Pass startDate and endDate to the hook
   const filteredInspections = useFilteredInspections(
     inspections,
     selectedRig,
@@ -44,6 +43,9 @@ export function Dashboard() {
   const passCount = filteredInspections.filter(
     (i) => i.status.toLowerCase() === "completed" || i.status.toLowerCase() === "pass"
   ).length;
+
+  const pendingCount = inspections.filter(i => i.status.toLowerCase() === "pending").length;
+  const criticalCount = inspections.filter(i => i.priority === "Urgent").length;
 
   const failCount = totalInspections - passCount;
 
@@ -72,7 +74,6 @@ export function Dashboard() {
     };
   });
 
-  // 🔧 ADD: Reset function
   const handleReset = () => {
     setSelectedPeriod("last-30-days");
     setSelectedRig("all");
@@ -90,30 +91,26 @@ export function Dashboard() {
         <KPICard
           title="Total Inspections"
           value={inspections.length}
-          change={{ value: 12, type: "increase" }}
           icon={CheckCircle}
-          description="Filtered results"
+          description="All recorded inspections"
         />
         <KPICard
           title="Pending Reviews"
-          value={inspections.filter(i => i.status.toLowerCase() === "pending").length}
-          change={{ value: 5, type: "decrease" }}
+          value={pendingCount}
           icon={Clock}
           description="Awaiting approval"
         />
         <KPICard
           title="Critical Issues"
-          value={ inspections.filter(i => i.priority === "Urgent").length}
-          change={{ value: 15, type: "increase" }}
+          value={criticalCount}
           icon={AlertTriangle}
-          description="Requires attention"
+          description="Requires immediate attention"
         />
         <KPICard
           title="Pass Rate"
           value={totalInspections > 0 ? `${Math.round((passCount / totalInspections) * 100)}%` : "0%"}
-          change={{ value: 3, type: "increase" }}
           icon={CheckCircle}
-          description="Overall compliance"
+          description="Overall compliance rate"
         />
       </div>
 
